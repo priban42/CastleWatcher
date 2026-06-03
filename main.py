@@ -378,7 +378,7 @@ def send_discord(new_lectures: list[dict]):
         url_part = f"\n🔗 {lec['url']}" if lec["url"] else ""
         ping = ""
         if "věda na hradě" in lec['title'].lower():
-            ping = "@Lososový burger enjoyer"
+            ping = " @Lososový burger enjoyer"
         lines.append(f"**{lec['title']}**{date_part}{url_part}{ping}")
 
 
