@@ -1,4 +1,4 @@
-# 🏰 Hrad.cz Lecture Monitor
+# 🏰 Hrad.cz Lecture Monitor (Vibecoded)
 
 Automatically checks [hrad.cz lectures page](https://www.hrad.cz/cs/kultura-na-hrade/prednasky-6) every 6 hours and notifies you via **email** and/or **Discord** when a new lecture is announced.
 
