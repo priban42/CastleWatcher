@@ -8,7 +8,7 @@ Runs entirely on **GitHub Actions** – no server needed, free tier is sufficien
 
 ## How it works
 
-1. GitHub Actions runs the Python script on a schedule (every 6 h).
+1. GitHub Actions runs the Python script on a schedule (every 10 min).
 2. The script fetches the lectures page and parses all listed events.
 3. It compares them against `lectures_state.json` stored in the repo.
 4. If anything is new → sends an email and/or Discord message.
