@@ -376,7 +376,12 @@ def send_discord(new_lectures: list[dict]):
     for lec in new_lectures:
         date_part = f" · {lec['date']}" if lec["date"] else ""
         url_part = f"\n🔗 {lec['url']}" if lec["url"] else ""
-        lines.append(f"**{lec['title']}**{date_part}{url_part}")
+        ping = ""
+        if "věda na hradě" in lec['title'].lower():
+            ping = "@Lososový burger enjoyer"
+        lines.append(f"**{lec['title']}**{date_part}{url_part}{ping}")
+
+
 
     lines.append(f"\n<{PAGE_URL}>")
     resp = requests.post(webhook_url, json={"content": "\n".join(lines)}, timeout=15)
