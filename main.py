@@ -381,14 +381,34 @@ def send_discord(new_lectures: list[dict]):
             ping = " <@&1511813682516983959>"
         lines.append(f"**{lec['title']}**{date_part}{url_part}{ping}")
 
-
-
     lines.append(f"\n<{PAGE_URL}>")
     resp = requests.post(webhook_url, json={"content": "\n".join(lines)}, timeout=15)
     if resp.status_code in (200, 204):
         print("✅ Discord notification sent.")
     else:
         print(f"❌ Discord webhook failed: {resp.status_code} {resp.text}")
+
+
+def send_discord_debug(new_lectures: list[dict]):
+    """Send run diagnostic logs to the dedicated debug channel."""
+    debug_webhook_url = os.environ.get("DISCORD_DEBUG_WEBHOOK_URL")
+    if not debug_webhook_url:
+        print("⚠️  DISCORD_DEBUG_WEBHOOK_URL not set – skipping debug webhook.")
+        return
+
+    runner_name = os.environ.get("RUNNER_NAME", "Unknown/Local Runner")
+    
+    message = (
+        f"🔧 **Debug Log**\n"
+        f"👤 **Runner:** `{runner_name}`\n"
+        f"📝 **Status:** Detected {len(new_lectures)} new lecture(s) and dispatched updates."
+    )
+
+    resp = requests.post(debug_webhook_url, json={"content": message}, timeout=15)
+    if resp.status_code in (200, 204):
+        print("✅ Discord debug message sent.")
+    else:
+        print(f"❌ Discord debug webhook failed: {resp.status_code} {resp.text}")
 
 
 # ---------------------------------------------------------------------------
@@ -423,6 +443,7 @@ def main():
     send_email(new_lectures)
     send_discord(new_lectures)
     add_to_calendar(new_lectures)
+    send_discord_debug(new_lectures)
 
     all_ids = list({lecture_id(l) for l in lectures} | known_ids)
     state["known_ids"] = all_ids
