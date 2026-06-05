@@ -429,7 +429,8 @@ def main():
     state = load_state()
     known_ids: set = set(state.get("known_ids", []))
     new_lectures = [lec for lec in lectures if lecture_id(lec) not in known_ids]
-
+    send_discord_debug(new_lectures)
+    
     if not new_lectures:
         print("✅ No new lectures.")
         state["known_ids"] = [lecture_id(l) for l in lectures]
@@ -443,7 +444,7 @@ def main():
     send_email(new_lectures)
     send_discord(new_lectures)
     add_to_calendar(new_lectures)
-    send_discord_debug(new_lectures)
+    
 
     all_ids = list({lecture_id(l) for l in lectures} | known_ids)
     state["known_ids"] = all_ids
