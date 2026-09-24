@@ -124,6 +124,26 @@ Check the logs to confirm it runs without errors.
 
 ---
 
+
+
+## setup locally:
+
+### 1. Create the Startup Script
+
+Create a file named `start.sh` in the root directory of the project:
+
+```bash
+touch start.sh
+chmod +x start.sh
+```
+```bash
+#!/bin/bash
+export DISCORD_WEBHOOK_URL="your_production_webhook_url_here"
+export DISCORD_DEBUG_WEBHOOK_URL="your_debug_webhook_url_here"
+export RUNNER_NAME="your_runner_name_here"
+
+~/jarvis/venv/bin/python3 main.py
+```
 ## Troubleshooting
 
 | Symptom                        | Fix                                                                  |
