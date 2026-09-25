@@ -3,3 +3,5 @@ __pycache__/
 .venv/
 capacity_log.csv
 bot.env
+start.sh
+monitor.log
