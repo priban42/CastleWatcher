@@ -82,6 +82,26 @@ You need a **Discord Webhook URL** from your own server.
 |------------------------|------------------------------|
 | `DISCORD_WEBHOOK_URL`  | the webhook URL you copied   |
 
+#### Capacity alerts (`#kapacita`)
+
+The monitor also watches free spots for the current **Věda na hradě** lecture and
+posts to a separate channel when spots **open up**, i.e. the count goes from 0 (or
+unknown) to above 0. That includes a newly announced lecture that already has free
+spots. Decreases, or further increases while spots are open, don't post. The alert
+pings the Věda na hradě role.
+
+Discord webhooks belong to a single channel, so create a second webhook:
+
+1. Right-click the `#kapacita` channel → **Edit Channel → Integrations → Webhooks → New Webhook**.
+2. Name it e.g. "Hrad Kapacita" and click **Copy Webhook URL**.
+3. Add it as a GitHub secret:
+
+| Secret name                     | Value                               |
+|---------------------------------|-------------------------------------|
+| `DISCORD_CAPACITY_WEBHOOK_URL`  | the `#kapacita` webhook URL         |
+
+If the secret isn't set, the capacity check still runs and saves its state but skips the alert.
+
 ---
 
 ### 4 · Adjust the schedule (optional)
@@ -110,7 +130,20 @@ After pushing all files and secrets, go to:
 
 **GitHub repo → Actions → Hrad.cz Lecture Monitor → Run workflow → Run workflow**
 
-Check the logs to confirm it runs without errors.
+Check the logs to confirm it runs without errors. A line starting with 🎟️ shows
+the capacity check result, e.g. `🎟️  Věda na Hradě: … : 0 free spot(s) (previously 0)`.
+
+#### Test the capacity finder locally
+
+`capacity.py` has a CLI for running each step of the lookup on its own. It only
+prints results; it doesn't send to Discord or touch the state file:
+
+```bash
+python capacity.py find-lecture                   # listing page → program page URL
+python capacity.py find-booking-url <program_url> # program page → booking form URL
+python capacity.py capacity <booking_url>         # booking form → free spots
+python capacity.py check                          # all of the above in one go
+```
 
 ---
 
@@ -120,7 +153,8 @@ Check the logs to confirm it runs without errors.
 |---------------------------------|----------------------------------------------|
 | `check_lectures.py`             | Main scraper + notification script           |
 | `.github/workflows/monitor.yml` | GitHub Actions workflow                      |
-| `lectures_state.json`           | Tracks known lectures (auto-updated by CI)   |
+| `capacity.py`                   | Věda na hradě capacity lookup + alert        |
+| `lectures_state.json`           | Tracks known lectures and last capacity (auto-updated by CI) |
 
 ---
 
@@ -140,6 +174,7 @@ chmod +x start.sh
 #!/bin/bash
 export DISCORD_WEBHOOK_URL="your_production_webhook_url_here"
 export DISCORD_DEBUG_WEBHOOK_URL="your_debug_webhook_url_here"
+export DISCORD_CAPACITY_WEBHOOK_URL="your_kapacita_webhook_url_here"
 export RUNNER_NAME="your_runner_name_here"
 
 ~/jarvis/venv/bin/python3 main.py
@@ -150,5 +185,6 @@ export RUNNER_NAME="your_runner_name_here"
 |--------------------------------|----------------------------------------------------------------------|
 | Email not arriving             | Check spam; verify App Password was generated correctly              |
 | Discord message not sent       | Make sure the webhook URL secret is set with no trailing spaces      |
+| No capacity alert              | Run `python capacity.py check` locally; `free_spots: None` means hrad.cz changed the booking page |
 | Script finds 0 lectures        | hrad.cz may have changed their HTML; open an issue or inspect manually |
 | Actions not running on schedule | GitHub pauses schedules on inactive repos – trigger manually once   |

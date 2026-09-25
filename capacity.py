@@ -17,10 +17,14 @@ Run this file directly to test each step on its own, e.g.:
     python capacity.py find-booking-url <program_url>
     python capacity.py capacity <booking_url>
     python capacity.py check            # runs the full chain end-to-end
+
+main.py calls update_capacity() on every run; it posts to the
+DISCORD_CAPACITY_WEBHOOK_URL channel when free spots open up.
 """
 
 import argparse
 import html
+import os
 import re
 import sys
 from dataclasses import dataclass
@@ -29,6 +33,9 @@ import requests
 from bs4 import BeautifulSoup
 
 from main import fetch_lectures
+
+# Role pinged for "Věda na hradě" (same one main.py pings for new lectures).
+VEDA_ROLE_PING = "<@&1511813682516983959>"
 
 HEADERS = {
     "User-Agent": (
@@ -62,9 +69,10 @@ class Lecture:
     program_url: str
 
 
-def find_veda_na_hrade_lecture() -> Lecture | None:
+def find_veda_na_hrade_lecture(lectures: list[dict] | None = None) -> Lecture | None:
     """Find the (first / soonest) 'Věda na hradě' lecture on the static listing page."""
-    lectures = fetch_lectures()
+    if lectures is None:
+        lectures = fetch_lectures()
     for lec in lectures:
         if LECTURE_TITLE_MATCH in lec["title"].lower():
             return Lecture(title=lec["title"], date=lec.get("date", ""), program_url=lec["url"])
@@ -113,6 +121,69 @@ def get_free_capacity(booking_url: str) -> int | None:
 def source_id_from_booking_url(booking_url: str) -> str | None:
     m = re.search(r"sourceId=(\d+)", booking_url)
     return m.group(1) if m else None
+
+
+# ---------------------------------------------------------------------------
+# Notification
+# ---------------------------------------------------------------------------
+
+def send_capacity_discord(lec: Lecture, booking_url: str, free: int):
+    webhook_url = os.environ.get("DISCORD_CAPACITY_WEBHOOK_URL")
+    if not webhook_url:
+        print("⚠️  DISCORD_CAPACITY_WEBHOOK_URL not set – skipping capacity alert.")
+        return
+
+    date_part = f" · {lec.date}" if lec.date else ""
+    message = (
+        f"## 🎟️ Free spots: {free}\n"
+        f"**{lec.title}**{date_part}\n"
+        f"🔗 {booking_url} {VEDA_ROLE_PING}"
+    )
+    resp = requests.post(webhook_url, json={"content": message}, timeout=15)
+    if resp.status_code in (200, 204):
+        print("✅ Capacity alert sent.")
+    else:
+        print(f"❌ Capacity webhook failed: {resp.status_code} {resp.text}")
+
+
+def update_capacity(state: dict, lectures: list[dict]) -> str:
+    """
+    Check the current Věda na hradě lecture's capacity and alert when spots
+    open up (0 or unknown -> above 0). Stores the last seen count in
+    state["capacity"]. Failures are logged and leave the state untouched, so
+    a broken scrape can't trigger a false "spots opened" alert later.
+    Returns a one-line summary for the debug log.
+    """
+    try:
+        lec = find_veda_na_hrade_lecture(lectures)
+        if not lec or not lec.program_url:
+            print("ℹ️  No Věda na hradě lecture with a program page – skipping capacity.")
+            return "no Věda na hradě lecture found"
+        booking_url = find_booking_url(lec.program_url)
+        if not booking_url:
+            print(f"⚠️  No booking form found on {lec.program_url}")
+            return f"{lec.title}: no booking form found"
+        free = get_free_capacity(booking_url)
+    except Exception as exc:
+        print(f"❌ Capacity check failed: {exc}")
+        return f"check failed: {exc}"
+
+    if free is None:
+        print(f"⚠️  Couldn't read free spots from {booking_url}")
+        return f"{lec.title}: couldn't read free spots"
+
+    source_id = source_id_from_booking_url(booking_url)
+    prev = state.get("capacity") or {}
+    # A different sourceId means a new lecture, so the old count doesn't apply.
+    prev_free = prev.get("free") if prev.get("source_id") == source_id else None
+    print(f"🎟️  {lec.title}: {free} free spot(s) (previously {prev_free})")
+
+    alerted = free > 0 and not prev_free
+    if alerted:
+        send_capacity_discord(lec, booking_url, free)
+
+    state["capacity"] = {"source_id": source_id, "title": lec.title, "free": free}
+    return f"{lec.title}: {free} free" + (" (alert sent)" if alerted else "")
 
 
 # ---------------------------------------------------------------------------

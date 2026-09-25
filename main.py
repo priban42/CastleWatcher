@@ -66,7 +66,8 @@ def fetch_lectures() -> list[dict]:
         date_tag = item.find(class_=lambda c: c and ("date" in c or "datum" in c))
         date_str = date_tag.get_text(strip=True) if date_tag else ""
 
-        link_tag = item.find("a", href=True)
+        # The link may be inside the item or wrap it (<a><article>…</article></a>).
+        link_tag = item.find("a", href=True) or item.find_parent("a", href=True)
         link = link_tag["href"] if link_tag else ""
         if link and not link.startswith("http"):
             link = "https://www.hrad.cz" + link
@@ -89,7 +90,9 @@ def fetch_lectures() -> list[dict]:
 
 
 def lecture_id(lecture: dict) -> str:
-    raw = f"{lecture['title']}|{lecture['url']}"
+    # Title only, so the ID survives URL changes. The trailing "|" keeps IDs
+    # identical to the ones already stored in lectures_state.json.
+    raw = f"{lecture['title']}|"
     return hashlib.sha256(raw.encode()).hexdigest()[:16]
 
 
@@ -389,7 +392,7 @@ def send_discord(new_lectures: list[dict]):
         print(f"❌ Discord webhook failed: {resp.status_code} {resp.text}")
 
 
-def send_discord_debug(new_lectures: list[dict]):
+def send_discord_debug(new_lectures: list[dict], capacity_summary: str):
     """Send run diagnostic logs to the dedicated debug channel."""
     debug_webhook_url = os.environ.get("DISCORD_DEBUG_WEBHOOK_URL")
     if not debug_webhook_url:
@@ -401,7 +404,8 @@ def send_discord_debug(new_lectures: list[dict]):
     message = (
         f"🔧 **Debug Log**\n"
         f"👤 **Runner:** `{runner_name}`\n"
-        f"📝 **Status:** Detected {len(new_lectures)} new lecture(s) and dispatched updates."
+        f"📝 **Status:** Detected {len(new_lectures)} new lecture(s) and dispatched updates.\n"
+        f"🎟️ **Capacity:** {capacity_summary}"
     )
 
     resp = requests.post(debug_webhook_url, json={"content": message}, timeout=15)
@@ -429,8 +433,12 @@ def main():
     state = load_state()
     known_ids: set = set(state.get("known_ids", []))
     new_lectures = [lec for lec in lectures if lecture_id(lec) not in known_ids]
-    send_discord_debug(new_lectures)
-    
+
+    # Imported here: capacity.py imports fetch_lectures from this module.
+    from capacity import update_capacity
+    capacity_summary = update_capacity(state, lectures)
+    send_discord_debug(new_lectures, capacity_summary)
+
     if not new_lectures:
         print("✅ No new lectures.")
         state["known_ids"] = [lecture_id(l) for l in lectures]
