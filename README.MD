@@ -153,7 +153,9 @@ python capacity.py check                          # all of the above in one go
 |---------------------------------|----------------------------------------------|
 | `check_lectures.py`             | Main scraper + notification script           |
 | `.github/workflows/monitor.yml` | GitHub Actions workflow                      |
-| `capacity.py`                   | Věda na hradě capacity lookup + alert        |
+| `capacity.py`                   | Věda na hradě capacity lookup + alert + log  |
+| `bot.py`                        | Always-on Discord bot, `/kapacita` graph     |
+| `capacity_log.csv`              | Every capacity reading (local, git-ignored)  |
 | `lectures_state.json`           | Tracks known lectures and last capacity (auto-updated by CI) |
 
 ---
@@ -179,6 +181,66 @@ export RUNNER_NAME="your_runner_name_here"
 
 ~/jarvis/venv/bin/python3 main.py
 ```
+
+## Capacity graph bot (`/kapacita`)
+
+Each `main.py` run appends the current free-spot count to `capacity_log.csv`
+next to the script. `bot.py` is a bot that stays running and answers `/kapacita`
+with a PNG graph of free spots over time for the **latest** lecture. When a new
+lecture appears (new `sourceId`), its history starts fresh and the graph shows
+only that one. The old rows stay in the CSV.
+
+### 1. Create the bot
+
+1. Go to https://discord.com/developers/applications → **New Application**, e.g. "Hrad Kapacita".
+2. **Bot** → **Reset Token** → copy the token.
+3. **OAuth2 → URL Generator**: scopes `bot` + `applications.commands`, permissions
+   **Send Messages** + **Attach Files**. Open the generated URL and add the bot to your server.
+4. In Discord, enable **Developer Mode** (Settings → Advanced). Right-click the server and the
+   `#kapacita` channel and pick **Copy ID** to get the IDs.
+
+### 2. Install and run
+
+```bash
+~/jarvis/venv/bin/pip install -r requirements.txt
+```
+
+Create `bot.env` (keep it out of git):
+
+```bash
+DISCORD_BOT_TOKEN=your_bot_token
+DISCORD_GUILD_ID=your_server_id
+DISCORD_CAPACITY_CHANNEL_ID=your_kapacita_channel_id   # optional: restrict /kapacita to this channel
+```
+
+Keep it running with systemd, e.g. `/etc/systemd/system/castlewatcher-bot.service`:
+
+```ini
+[Unit]
+Description=CastleWatcher /kapacita bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=pi
+WorkingDirectory=/home/pi/CastleWatcher
+EnvironmentFile=/home/pi/CastleWatcher/bot.env
+ExecStart=/home/pi/jarvis/venv/bin/python3 bot.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now castlewatcher-bot
+journalctl -u castlewatcher-bot -f
+```
+
+Test the graph without Discord: `python bot.py --render out.png`.
+
 ## Troubleshooting
 
 | Symptom                        | Fix                                                                  |

@@ -19,15 +19,18 @@ Run this file directly to test each step on its own, e.g.:
     python capacity.py check            # runs the full chain end-to-end
 
 main.py calls update_capacity() on every run; it posts to the
-DISCORD_CAPACITY_WEBHOOK_URL channel when free spots open up.
+DISCORD_CAPACITY_WEBHOOK_URL channel when free spots open up, and appends
+every reading to capacity_log.csv (graphed by bot.py).
 """
 
 import argparse
+import csv
 import html
 import os
 import re
 import sys
 from dataclasses import dataclass
+from datetime import datetime, timezone
 
 import requests
 from bs4 import BeautifulSoup
@@ -48,6 +51,10 @@ HEADERS = {
 }
 
 LECTURE_TITLE_MATCH = "věda na hradě"
+
+# Next to this file so it doesn't depend on the cwd cron / systemd starts us in.
+CAPACITY_LOG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "capacity_log.csv")
+CAPACITY_LOG_FIELDS = ["timestamp", "source_id", "title", "free"]
 
 # Matches a quoted booking-form URL anywhere in the page source (plain <a href>,
 # a data-* attribute, or an inline onclick) regardless of query-param order.
@@ -124,6 +131,47 @@ def source_id_from_booking_url(booking_url: str) -> str | None:
 
 
 # ---------------------------------------------------------------------------
+# Capacity log
+# ---------------------------------------------------------------------------
+
+def log_capacity(source_id: str | None, title: str, free: int):
+    """Append one reading (UTC timestamp) to CAPACITY_LOG."""
+    is_new = not os.path.exists(CAPACITY_LOG) or os.path.getsize(CAPACITY_LOG) == 0
+    with open(CAPACITY_LOG, "a", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=CAPACITY_LOG_FIELDS)
+        if is_new:
+            writer.writeheader()
+        writer.writerow({
+            "timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "source_id": source_id or "",
+            "title": title,
+            "free": free,
+        })
+
+
+def load_latest_lecture_log() -> tuple[str, list[tuple[datetime, int]]] | None:
+    """
+    Return (title, [(utc_datetime, free), ...]) for the most recently logged
+    lecture, i.e. the rows sharing the last row's source_id. A new lecture has
+    a new sourceId, so its history starts fresh. None if nothing is logged.
+    """
+    if not os.path.exists(CAPACITY_LOG):
+        return None
+    with open(CAPACITY_LOG, newline="", encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+    if not rows:
+        return None
+
+    latest = rows[-1]["source_id"]
+    points = [
+        (datetime.fromisoformat(r["timestamp"]), int(r["free"]))
+        for r in rows
+        if r["source_id"] == latest
+    ]
+    return rows[-1]["title"], points
+
+
+# ---------------------------------------------------------------------------
 # Notification
 # ---------------------------------------------------------------------------
 
@@ -181,6 +229,11 @@ def update_capacity(state: dict, lectures: list[dict]) -> str:
     alerted = free > 0 and not prev_free
     if alerted:
         send_capacity_discord(lec, booking_url, free)
+
+    try:
+        log_capacity(source_id, lec.title, free)
+    except OSError as exc:
+        print(f"❌ Couldn't write {CAPACITY_LOG}: {exc}")
 
     state["capacity"] = {"source_id": source_id, "title": lec.title, "free": free}
     return f"{lec.title}: {free} free" + (" (alert sent)" if alerted else "")
