@@ -8,7 +8,8 @@ Věda na hradě lecture, built from capacity_log.csv (written by main.py).
 Env:
     DISCORD_BOT_TOKEN            bot token (required)
     DISCORD_GUILD_ID             server ID; commands sync there so they show up instantly
-    DISCORD_CAPACITY_CHANNEL_ID  optional; if set, /kapacita only works in that channel
+
+/kapacita only works in the #kapacita channel (KAPACITA_CHANNEL_ID).
 
 Render the graph locally without Discord:
 
@@ -33,6 +34,7 @@ from matplotlib.ticker import MaxNLocator
 from capacity import load_latest_lecture_log
 
 PRAGUE = ZoneInfo("Europe/Prague")
+KAPACITA_CHANNEL_ID = 1552626317432721408
 
 
 # ---------------------------------------------------------------------------
@@ -93,17 +95,15 @@ def run_bot():
         sys.exit("DISCORD_BOT_TOKEN not set")
     guild_id = os.environ.get("DISCORD_GUILD_ID")
     guild = discord.Object(id=int(guild_id)) if guild_id else None
-    channel_id = os.environ.get("DISCORD_CAPACITY_CHANNEL_ID")
-    channel_id = int(channel_id) if channel_id else None
 
     client = discord.Client(intents=discord.Intents.default())
     tree = app_commands.CommandTree(client)
 
     @tree.command(name="kapacita", description="Graph of free spots for the latest Věda na hradě lecture")
     async def kapacita(interaction: discord.Interaction):
-        if channel_id and interaction.channel_id != channel_id:
+        if interaction.channel_id != KAPACITA_CHANNEL_ID:
             await interaction.response.send_message(
-                f"Use this in <#{channel_id}>.", ephemeral=True
+                f"Use this in <#{KAPACITA_CHANNEL_ID}>.", ephemeral=True
             )
             return
 

@@ -37,8 +37,9 @@ from bs4 import BeautifulSoup
 
 from main import fetch_lectures
 
-# Role pinged for "Věda na hradě" (same one main.py pings for new lectures).
-VEDA_ROLE_PING = "<@&1511813682516983959>"
+# Role pinged when capacity frees up (separate from the Věda na hradě role
+# main.py pings for new lectures).
+CAPACITY_ROLE_ID = "1552623294593896469"
 
 HEADERS = {
     "User-Agent": (
@@ -185,9 +186,10 @@ def send_capacity_discord(lec: Lecture, booking_url: str, free: int):
     message = (
         f"## 🎟️ Free spots: {free}\n"
         f"**{lec.title}**{date_part}\n"
-        f"🔗 {booking_url} {VEDA_ROLE_PING}"
+        f"🔗 {booking_url} <@&{CAPACITY_ROLE_ID}>"
     )
-    resp = requests.post(webhook_url, json={"content": message}, timeout=15)
+    payload = {"content": message, "allowed_mentions": {"roles": [CAPACITY_ROLE_ID]}}
+    resp = requests.post(webhook_url, json=payload, timeout=15)
     if resp.status_code in (200, 204):
         print("✅ Capacity alert sent.")
     else:

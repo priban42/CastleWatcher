@@ -88,7 +88,7 @@ The monitor also watches free spots for the current **Věda na hradě** lecture 
 posts to a separate channel when spots **open up**, i.e. the count goes from 0 (or
 unknown) to above 0. That includes a newly announced lecture that already has free
 spots. Decreases, or further increases while spots are open, don't post. The alert
-pings the Věda na hradě role.
+pings the capacity role (`CAPACITY_ROLE_ID` in `capacity.py`).
 
 Discord webhooks belong to a single channel, so create a second webhook:
 
@@ -196,8 +196,9 @@ only that one. The old rows stay in the CSV.
 2. **Bot** → **Reset Token** → copy the token.
 3. **OAuth2 → URL Generator**: scopes `bot` + `applications.commands`, permissions
    **Send Messages** + **Attach Files**. Open the generated URL and add the bot to your server.
-4. In Discord, enable **Developer Mode** (Settings → Advanced). Right-click the server and the
-   `#kapacita` channel and pick **Copy ID** to get the IDs.
+4. In Discord, enable **Developer Mode** (Settings → Advanced), right-click the server icon and
+   pick **Copy Server ID** for `DISCORD_GUILD_ID`. The `#kapacita` channel ID is hardcoded
+   in `bot.py` (`KAPACITA_CHANNEL_ID`).
 
 ### 2. Install and run
 
@@ -210,7 +211,6 @@ Create `bot.env` (keep it out of git):
 ```bash
 DISCORD_BOT_TOKEN=your_bot_token
 DISCORD_GUILD_ID=your_server_id
-DISCORD_CAPACITY_CHANNEL_ID=your_kapacita_channel_id   # optional: restrict /kapacita to this channel
 ```
 
 Keep it running with systemd, e.g. `/etc/systemd/system/castlewatcher-bot.service`:
