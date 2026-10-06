@@ -1,28 +1,24 @@
 {
   "known_ids": [
-    "9822de5094fe5274",
-    "948ca03cd562d928",
-    "874c436294e85bb5",
-    "05ca94cf0ec46050",
-    "4e5e570772cb7676",
     "9af454ad562c29a6",
-    "c3aa1e40f7d6d4f3",
-    "90f8b876199b56d1",
-    "6f759a74ee03b6ef",
-    "6f759a74ee03b6ef",
-    "3f3a3a8d3d0e0f1b",
-    "323c1cc05af014fd",
     "ff38b4c25c0091f6",
-    "3f3a3a8d3d0e0f1b",
+    "874c436294e85bb5",
+    "2243839c22c30938",
     "aff0841abac52cc6",
+    "9822de5094fe5274",
+    "3f3a3a8d3d0e0f1b",
+    "c3aa1e40f7d6d4f3",
+    "05ca94cf0ec46050",
+    "6f759a74ee03b6ef",
+    "90f8b876199b56d1",
+    "4e5e570772cb7676",
     "37b68f74c7ac818c",
-    "aff0841abac52cc6",
-    "3f3a3a8d3d0e0f1b",
-    "3f3a3a8d3d0e0f1b"
+    "948ca03cd562d928",
+    "323c1cc05af014fd"
   ],
   "capacity": {
     "source_id": "13807",
     "title": "Věda na Hradě: Lidé, místa a ekonomický úspěch - důkazy z laboratoře dějin",
-    "free": 1
+    "free": 6
   }
 }
