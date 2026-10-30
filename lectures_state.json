@@ -1,21 +1,26 @@
 {
   "known_ids": [
-    "2243839c22c30938",
-    "880710a4cf75446f",
-    "ff38b4c25c0091f6",
-    "04eb21458c3d5408",
-    "1fffe9cb8f9474f0",
+    "6f759a74ee03b6ef",
     "6f759a74ee03b6ef",
     "3f3a3a8d3d0e0f1b",
-    "83076272ee2c9263",
     "323c1cc05af014fd",
     "4e5e570772cb7676",
+    "83076272ee2c9263",
+    "04eb21458c3d5408",
+    "ff38b4c25c0091f6",
+    "3f3a3a8d3d0e0f1b",
+    "880710a4cf75446f",
+    "1fffe9cb8f9474f0",
+    "2243839c22c30938",
+    "37b68f74c7ac818c",
     "19a8ed95bf6e4f96",
-    "37b68f74c7ac818c"
+    "2243839c22c30938",
+    "3f3a3a8d3d0e0f1b",
+    "3f3a3a8d3d0e0f1b"
   ],
   "capacity": {
     "source_id": "13896",
     "title": "Věda na Hradě SPECIÁL: What Happened to Havel’s Europe? Democracy, Power, and Europe’s Future",
-    "free": 42
+    "free": 10
   }
 }
