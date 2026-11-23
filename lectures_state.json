@@ -1,18 +1,17 @@
 {
   "known_ids": [
     "1fffe9cb8f9474f0",
-    "2243839c22c30938",
-    "37b68f74c7ac818c",
-    "19a8ed95bf6e4f96",
-    "2243839c22c30938",
-    "3f3a3a8d3d0e0f1b",
     "30d48f96f18ab9cd",
     "4dbcca369205214d",
-    "3f3a3a8d3d0e0f1b"
+    "2243839c22c30938",
+    "b601cd74ba6ee354",
+    "3f3a3a8d3d0e0f1b",
+    "19a8ed95bf6e4f96",
+    "37b68f74c7ac818c"
   ],
   "capacity": {
-    "source_id": "13896",
-    "title": "Věda na Hradě SPECIÁL: What Happened to Havel’s Europe? Democracy, Power, and Europe’s Future",
+    "source_id": "13907",
+    "title": "Věda na Hradě: Vývoj koronaviru MERS z hlediska jeho pandemického potenciálu",
     "free": 0
   }
 }
